@@ -48,11 +48,46 @@ def qlearning():
             a = policy.get_a(s)
             max_a = max([(x, Q[(s, x)]) for x in env.actions()], key=lambda x:x[1])[0]
             Q[(s0, a0)] += 0.9 * (r + 0.9 * Q[(s, max_a)] - Q[(s0, a0)])
-            s0 = s
-            a0 = a
             mm = [(x, Q[(s0, x)]) for x in env.actions()]
             action = max(mm, key=lambda x:x[1])[0]
             policy.set_max(s0, action)
+            s0 = s
+            a0 = a
+
+    Pi = {}
+    for i in range(grid_size**2):
+        Pi[i] = policy.get_m(i)
+    for t in env.get_t():
+        Pi[t] = 'ter'
+
+    env.render(Pi)
+
+
+def td_lambda():
+    grid_size = 4
+    env = Env(grid_size)
+    policy = EspionGreedyPolicy(env.actions(), range(grid_size**2))
+    Q = defaultdict(float)
+    for i in range(5000):
+        E = defaultdict(float)
+        s0 = env.init()
+        if env.is_t(s0):
+            continue
+        a0 = policy.get_a(s0)
+        while not env.is_t(s0):
+            s, r = env.step(a0)
+            a = policy.get_a(s)
+            epsion = r + 0.9 * Q[(s, a)] - Q[(s0, a0)]
+            E[(s0, a0)] += 1
+            for s in range(grid_size**2):
+                for a in env.actions():
+                    Q[(s, a)] += 0.9 * epsion * E[(s, a)]
+                    E[(s, a)] *= 0.9
+            mm = [(x, Q[(s0, x)]) for x in env.actions()]
+            action = max(mm, key=lambda x:x[1])[0]
+            policy.set_max(s0, action)
+            s0 = s
+            a0 = a
 
     Pi = {}
     for i in range(grid_size**2):
@@ -63,5 +98,6 @@ def qlearning():
     env.render(Pi)
 
 if __name__ == '__main__':
-    sarsa()
+    #sarsa()
     qlearning()
+    #td_lambda()
